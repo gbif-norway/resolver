@@ -1,0 +1,22 @@
+table { width: 100%; }
+table th { padding-left: 1em; text-align: left; width: 16em; }
+table td { text-align: left; min-width: 9em; }
+table tr.even { background: #fff; }
+table tr.odd { background: #f4f4f4; }
+p { padding-left: 1em; }
+img { border: 2px solid #333; }
+h1, h2 { font-size: large; }
+table a { color: #000; text-decoration: none; border-bottom: 1px dotted #333; }
+.formats { float: right; margin: 0 2em 0 0; }
+.formats a { padding-right: 2px; }
+.formats a:link { color: #0a0; }
+.formats a:link:hover, a:visited:hover, a:active:hover { color: #373; }
+.formats a:visited, a:active { color: #0a0; }
+th, td { vertical-align: top; }
+td a { border-bottom: none; }
+#search { margin: 10em auto 0 auto; width: 32em; }
+#search input { width: 100%; }
+#search p { padding: 0; }
+#search h1 { font-size: x-large; }
+a { text-decoration: none; }
+a:hover { color: #00f; }

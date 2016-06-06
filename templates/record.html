@@ -1,0 +1,27 @@
+$def with (key, record, prefixed, grouped)
+<!doctype html>
+<title>gbif.no resolver - %s</title>
+<meta name='viewport' content='initial-scale = 1.0,maximum-scale = 1.0' />
+<link rel='stylesheet' type='text/css' href='/static/resolver.css'>
+<script src='/static/resolver.js'></script>
+<p class='formats'>
+
+html
+<a href='/${key}.csv'>csv</a>
+<a href='/${key}.txt'>txt</a>
+<a href='/${key}.n3'>n3/turtle</a>
+<a href='/${key}.json'>json-ld</a>
+<a href='/${key}.rdf'>rdf</a>
+
+<h1>$key</h1>
+
+$for group, terms in grouped.iteritems():
+  <h2>$group</h2>
+  <table>
+  $for term,value in terms.iteritems():
+    $if group != 'other':
+      <tr><th><a href='http://rs.tdwg.org/dwc/terms/$term'>$term</a></th><td>$value</td>
+    $else:
+      <tr><th>$term</th><td>$value</td>
+  </table>
+
