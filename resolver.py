@@ -162,7 +162,7 @@ class resolver:
 urls = (
     '/resolver', 'index',
     '/resolver/', 'index',
-    '/resolver/([^/]+)', 'resolver',
+    '/resolver/(.+)', 'resolver',
 )
 
 app = web.application(urls, locals())
