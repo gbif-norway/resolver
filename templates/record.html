@@ -1,4 +1,4 @@
-$def with (key, record, prefixed, grouped)
+$def with (key, record, prefixed, grouped, meta)
 <!doctype html>
 <title>gbif.no resolver - %s</title>
 <meta name='viewport' content='initial-scale = 1.0,maximum-scale = 1.0' />
@@ -28,3 +28,8 @@ $for group, terms in grouped.iteritems():
       <td>$value</td>
   </table>
 
+$if meta:
+  <div id='meta'>
+    <p><b>Updated:</b> $time(meta.get('created'))
+    <p><b>First added to resolver:</b> $time(meta.get('created'))
+  </div>

@@ -4,6 +4,7 @@
 import os
 import sys
 import web
+import time
 import json
 import yaml
 import logging
@@ -64,9 +65,9 @@ def prefix(record):
         else: prefixed["dwc:%s" % k] = v
     return prefixed
 
-def resolve(key):
+def resolve(key, path='dwc.db'):
     db = cabinet.TDB()
-    db.open('dwc.db', cabinet.TDBOREADER | cabinet.TDBONOLCK)
+    db.open(path, cabinet.TDBOREADER | cabinet.TDBONOLCK)
     try:
         record = db.get(key)
         db.close()
@@ -74,10 +75,13 @@ def resolve(key):
     except:
         db.close()
 
-def html(key, record, prefixed, grouped):
-    return render.record(key, record, prefixed, grouped)
+def graph(k, r, p, g):
+    return Graph().parse(data=jsonld(k, r, p, g), format='json-ld')
 
-def csv(key, record, prefixed, grouped):
+def html(key, record, prefixed, grouped, meta):
+    return render.record(key, record, prefixed, grouped, meta)
+
+def csv(key, record, prefixed, grouped, meta):
     web.header('Content-Type', 'text/csv; charset=utf-8')
     buf = StringIO.StringIO()
     writer = unicodecsv.DictWriter(buf, record.keys())
@@ -86,23 +90,20 @@ def csv(key, record, prefixed, grouped):
     buf.seek(0)
     yield(buf.read())
 
-def graph(k, r, p, g):
-    return Graph().parse(data=jsonld(k, r, p, g), format='json-ld')
-
-def text(key, record, prefixed, grouped):
+def text(key, record, prefixed, grouped, meta):
     web.header('Content-Type', 'text/plain; charset=utf-8')
     for k,v in record.iteritems():
         yield("%s\t%s\n" % (k, v))
 
-def n3(key, record, prefixed, grouped):
+def n3(key, record, prefixed, grouped, meta):
     web.header('Content-Type', 'text/n3; charset=utf-8')
     return graph(key, record, prefixed, grouped).serialize(format='n3')
 
-def rdf(key, record, prefixed, grouped):
+def rdf(key, record, prefixed, grouped, meta):
     web.header('Content-Type', 'application/rdf+xml; charset=utf-8')
     return graph(key, record, prefixed, grouped).serialize()
 
-def jsonld(key, record, prefixed, grouped):
+def jsonld(key, record, prefixed, grouped, meta):
     prefixed['@id'] = "http://purl.org/gbifnorway/id/%s" % key
     prefixed['@context'] = {
         "dc": "http://purl.org/dc/elements/1.1/", 
@@ -130,10 +131,16 @@ exts = {
     '.json': jsonld
 }
 
-render = template.render('templates')
+def strfepoch(epoch, fmt="%Y-%m-%d"):
+    return time.strftime(fmt, time.localtime(float(epoch)))
+
+render = template.render('templates', globals={ 'time': strfepoch })
 
 class index:
     def GET(self):
+        q = web.input()
+        if 'id' in q:
+            raise web.seeother("/resolver/%s" % q['id'])
         return render.index(0)
 
 class resolver:
@@ -142,12 +149,13 @@ class resolver:
         mime = web.ctx.env.get('CONTENT_TYPE')
         record = resolve(key)
         if record:
+            meta = resolve(key, 'meta.db')
             prefixed = prefix(record)
             grouped = group(record.copy())
             if ext: viewer = exts[ext] or html
             elif mime: viewer = mimes[mime] or html
             else: viewer = html
-            return viewer(key, record, prefixed, grouped)
+            return viewer(key, record, prefixed, grouped, meta)
         else:
             return web.notfound()
 
