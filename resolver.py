@@ -152,8 +152,9 @@ class resolver:
             return web.notfound()
 
 urls = (
-    '/', 'index',
-    '/([^/]+)', 'resolver',
+    '/resolver', 'index',
+    '/resolver/', 'index',
+    '/resolver/([^/]+)', 'resolver',
 )
 
 app = web.application(urls, locals())
