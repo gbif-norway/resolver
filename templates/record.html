@@ -18,6 +18,8 @@ $for group, terms in grouped.iteritems():
   <h2>$group</h2>
   <table>
   $for term,value in terms.iteritems():
+    $if term.startswith("_"):
+      $continue
     $if group != 'other':
       <tr><th><a href='http://rs.tdwg.org/dwc/terms/$term'>$term</a></th>
     $else:

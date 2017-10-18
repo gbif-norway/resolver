@@ -23,7 +23,7 @@ from web import form, template
 from tokyo import cabinet
 
 dwc = {
-    'record': ['dcterms:type', 'dcterms:modified', 'dcterms:language', 'dcterms:license', 'dcterms:rightsHolder', 'dcterms:accessRights', 'dcterms:bibliographicCitation', 'dcterms:references, institutionID', 'collectionID', 'datasetID', 'institutionCode', 'collectionCode', 'datasetName', 'ownerInstitutionCode', 'basisOfRecord', 'informationWithheld', 'dataGeneralizations', 'dynamicProperties'],
+    'record': ['dcterms:title', 'dcterms:type', 'dcterms:modified', 'dcterms:language', 'dcterms:license', 'dcterms:rightsHolder', 'dcterms:accessRights', 'dcterms:bibliographicCitation', 'dcterms:references, institutionID', 'collectionID', 'datasetID', 'institutionCode', 'collectionCode', 'datasetName', 'ownerInstitutionCode', 'basisOfRecord', 'informationWithheld', 'dataGeneralizations', 'dynamicProperties'],
 
     'occurrence': ['occurrenceID', 'catalogNumber', 'recordNumber', 'recordedBy', 'individualCount', 'organismQuantity', 'organismQuantityType', 'sex', 'lifeStage', 'reproductiveCondition', 'behavior', 'establishmentMeans', 'occurrenceStatus', 'preparations', 'disposition', 'associatedMedia', 'associatedReferences', 'associatedSequences', 'associatedTaxa', 'otherCatalogNumbers', 'occurrenceRemarks'],
 
@@ -65,10 +65,20 @@ def prefix(record):
         else: prefixed["dwc:%s" % k] = v
     return prefixed
 
+def total(path='dwc.db'):
+  db = cabinet.TDB()
+  try:
+    db.open(path, cabinet.TDBOREADER | cabinet.TDBONOLCK)
+    count = len(db)
+    db.close()
+    return count
+  except:
+    db.close()
+
 def resolve(key, path='dwc.db'):
     db = cabinet.TDB()
-    db.open(path, cabinet.TDBOREADER | cabinet.TDBONOLCK)
     try:
+        db.open(path, cabinet.TDBOREADER | cabinet.TDBONOLCK)
         record = db.get(key)
         db.close()
         return record
@@ -103,7 +113,7 @@ def rdf(key, record, prefixed, grouped, meta):
     web.header('Content-Type', 'application/rdf+xml; charset=utf-8')
     return graph(key, record, prefixed, grouped).serialize()
 
-def jsonld(key, record, prefixed, grouped, meta):
+def jsonld(key, record, prefixed, grouped, meta=None):
     prefixed['@id'] = "http://purl.org/gbifnorway/id/%s" % key
     prefixed['@context'] = {
         "dc": "http://purl.org/dc/elements/1.1/", 
@@ -114,12 +124,12 @@ def jsonld(key, record, prefixed, grouped, meta):
 mimes = {
     '*/*': html,
     'text/html': html,
+    'application/json': jsonld,
+    'application.ld+json': jsonld,
     'text/plain': text,
     'text/n3': n3,
     'text/turtle': n3,
-    'application/rdf+xml': rdf,
-    'application/json': jsonld,
-    'application.ld+json': jsonld
+    'application/rdf+xml': rdf
 }
 
 exts = {
@@ -141,17 +151,31 @@ class index:
         q = web.input()
         if 'id' in q:
             raise web.seeother("/resolver/%s" % q['id'])
-        return render.index(0)
+        return render.index(total())
 
 class resolver:
     def GET(self, raw):
         key, ext = os.path.splitext(raw)
+        key = key.replace("urn:uuid:", "")
+        key = key.replace("urn:catalog:", "")
         mime = web.ctx.env.get('CONTENT_TYPE')
+        if "HTTP_ACCEPT" in web.ctx.env:
+          accept = web.ctx.env.get("HTTP_ACCEPT", "text/html")
+          with open('test.log', 'a') as f:
+            f.write("Accept header: " + accept + "\n")
+          for part in accept.split(","):
+            m = part.split(";")[0]
+            if m in mimes:
+              mime = m
+              break
         record = resolve(key)
         if record:
             meta = resolve(key, 'meta.db')
+            del record['_id']
+            del record['_idtype']
             prefixed = prefix(record)
             grouped = group(record.copy())
+            prefixed['dc:title'] = record.get('scientificName')
             if ext: viewer = exts[ext] or html
             elif mime: viewer = mimes[mime] or html
             else: viewer = html

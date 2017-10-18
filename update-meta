@@ -11,7 +11,7 @@ csv.field_size_limit(sys.maxsize)
 db = cabinet.TDB()
 mdb = cabinet.TDB()
 
-db.open("dwc.db", cabinet.TDBOWRITER)
+db.open("dwc.db", cabinet.TDBOREADER)
 mdb.open("meta.db", cabinet.TDBOWRITER)
 
 for key in db:
