@@ -23,7 +23,7 @@ from web import form, template
 from tokyo import cabinet
 
 dwc = {
-    'record': ['dcterms:title', 'dcterms:type', 'dcterms:modified', 'dcterms:language', 'dcterms:license', 'dcterms:rightsHolder', 'dcterms:accessRights', 'dcterms:bibliographicCitation', 'dcterms:references, institutionID', 'collectionID', 'datasetID', 'institutionCode', 'collectionCode', 'datasetName', 'ownerInstitutionCode', 'basisOfRecord', 'informationWithheld', 'dataGeneralizations', 'dynamicProperties'],
+    'record': ['id', 'dcterms:title', 'dcterms:type', 'dcterms:modified', 'dcterms:language', 'dcterms:license', 'dcterms:rightsHolder', 'dcterms:accessRights', 'dcterms:bibliographicCitation', 'dcterms:references', 'title', 'type', 'modified', 'language', 'license', 'rightsHolder', 'accessRights', 'bibliographicCitation', 'institutionID', 'collectionID', 'datasetID', 'institutionCode', 'collectionCode', 'datasetName', 'ownerInstitutionCode', 'basisOfRecord', 'informationWithheld', 'dataGeneralizations', 'dynamicProperties'],
 
     'occurrence': ['occurrenceID', 'catalogNumber', 'recordNumber', 'recordedBy', 'individualCount', 'organismQuantity', 'organismQuantityType', 'sex', 'lifeStage', 'reproductiveCondition', 'behavior', 'establishmentMeans', 'occurrenceStatus', 'preparations', 'disposition', 'associatedMedia', 'associatedReferences', 'associatedSequences', 'associatedTaxa', 'otherCatalogNumbers', 'occurrenceRemarks'],
 

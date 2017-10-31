@@ -15,23 +15,27 @@ html
 <h1>$key</h1>
 
 $for group, terms in grouped.iteritems():
-  <h2>$group</h2>
-  <table>
-  $for term,value in terms.iteritems():
-    $if term.startswith("_"):
-      $continue
-    $if group != 'other':
-      <tr><th><a href='http://rs.tdwg.org/dwc/terms/$term'>$term</a></th>
-    $else:
-      <tr><th>$term</th>
-    $if value.startswith("http://") or value.startswith("https://"):
-      <td><a href='$value'>$value</a>
-    $else:
-      <td>$value</td>
-  </table>
+  $if terms and len(terms) > 0:
+    <h2>$group</h2>
+    <table>
+    $for term,value in terms.iteritems():
+      $if term.startswith("_"):
+        $continue
+      $if not value:
+        $continue
+      $if group != 'other':
+        <tr><th><a href='http://rs.tdwg.org/dwc/terms/$term'>$term</a></th>
+      $else:
+        <tr><th>$term</th>
+      $if value.startswith("http://") or value.startswith("https://"):
+        <td><a href='$value'>$value</a>
+      $else:
+        <td>$value</td>
+    </table>
 
 $if meta:
   <div id='meta'>
     <p><b>Updated:</b> $time(meta.get('created'))
     <p><b>First added to resolver:</b> $time(meta.get('created'))
   </div>
+
