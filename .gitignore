@@ -1,0 +1,4 @@
+*.db
+tmp/
+*.pyc
+src/

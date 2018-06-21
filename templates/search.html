@@ -1,0 +1,31 @@
+$def with(q, results)
+
+<!doctype html>
+<title>gbif.no resolver search</title>
+<link rel='stylesheet' type='text/css' href='/static/resolver.css'>
+<div id='search'>
+<h1>gbif.no resolver search</h1>
+<form method='get'>
+<input id='q' name='q' value='$q' placeholder='Query (Lucene syntax)'>
+</form>
+<script>document.getElementById('id').focus()</script>
+
+$if results:
+  <h2>$results["total"] results</h2>
+  <p>
+  $for hit in results.get("hits"):
+    <a href='$config['resolver']$hit['_id']'>
+      $hit['_id']
+    </a> ($hit['_score'])<br>
+$else:
+  <h2>Example queries</h2>
+  <p>
+    <a href="?q=locality:ås">locality:ås</a><br>
+    <a href="?q=year:2018">year:2018</a><br>
+    <a href="?q=scientificName:triticum">scientificName:triticum</a><br>
+    <a href="?q=scientificName:lupus AND class:mammalia">
+      scientificName:lupus AND class:mammalia
+    </a>
+
+$if config.get("resolver"):
+  <p><a href="$config["resolver"]">To the resolver…</a>

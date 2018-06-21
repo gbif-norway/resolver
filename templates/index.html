@@ -1,0 +1,21 @@
+$def with(n)
+
+<!doctype html>
+<title>gbif.no resolver</title>
+<link rel='stylesheet' type='text/css' href='/static/resolver.css'>
+<div id='search'>
+<h1>gbif.no resolver</h1>
+<form method='get'>
+<input id='id' name='id' placeholder='Identifier' type='text'>
+</form>
+<script>document.getElementById('id').focus()</script>
+
+<p><i>$n records</i>
+
+<p>
+$if config.get("examples"):
+  $for example in config["examples"]:
+    <b>$example["title"]</b>: <a href='/resolver/$example['id']'>$example['id']</a>
+
+$if config.get("search"):
+  <p><a href="$config["search"]">Search the resolver…</a>

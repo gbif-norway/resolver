@@ -1,0 +1,5 @@
+index: resolver
+resolver: http://localhost:8080/resolver/
+hosts:
+  - { host: localhost }
+timeout: 360

@@ -1,0 +1,152 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use v5.16;
+
+use Archive::Zip qw(:ERROR_CODES :CONSTANTS);
+use File::Temp qw(mktemp);
+use File::Basename;
+use Getopt::Std;
+use LWP::Simple;
+use Parse::CSV;
+use GDBM_File;
+
+use JSON;
+
+our $VERSION = "0.01";
+
+our $usage = "$0 [-ehvV] [-c core] [-d database] PATH/URL...";
+
+our ($opt_c, $opt_d, $opt_e, $opt_h, $opt_v, $opt_i, $opt_s, $opt_V);
+our $idre = "([0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})\$";
+
+getopts("c:d:ehisvV");
+
+my ($es, $bulk, %db);
+
+if($opt_e) {
+  require Search::Elasticsearch;
+  require Search::Elsasticsearch::Client::5_0::Bulk;
+
+  $es = Search::Elasticsearch->new;
+  $bulk = $es->bulk_helper(
+    index => "resolver",
+    type => "dwc"
+  );
+}
+if($opt_d) {
+  tie %db, 'GDBM_File', $opt_d, &GDBM_WRCREAT, 0640 if $opt_d;
+}
+
+$ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0 if $opt_i;
+
+if($opt_h) {
+  say "$usage\n";
+  exit 0;
+}
+if($opt_v) {
+  say "$0 $VERSION";
+  exit 0;
+}
+
+my $verbose = $opt_V && !$opt_s;
+my $silent = $opt_s;
+
+my ($skipped, $total, $sets) = (0, 0, 0);
+
+if (!$opt_d && !$opt_e) {
+  say "No resolver specified!";
+  say "\t-e to use Elasticsearch";
+  say "\t-d [dbfile] to use GDBM";
+  exit 1;
+}
+
+for my $path (@ARGV) {
+  say "Adding $path" if !$silent;
+  if($path =~ /^https?\:\/\//) {
+    mkdir("tmp");
+    my $zipname = mktemp("tmp/ipt-zipXXXX");
+    getstore($path, $zipname);
+    $path = $zipname;
+  }
+
+  my $mode = "txt";
+  my @members = [$path];
+
+  if($path !~ /\.txt$/) {
+    my $zip = Archive::Zip->new;
+    $zip->read($path) == AZ_OK || die;
+    @members = $zip->membersMatching(".*\.txt");
+    $mode = "zip";
+  }
+
+  for my $member (@members) {
+    my ($core, $fname);
+
+    if($mode eq "zip") {
+      $core = basename($member->fileName, ".txt");
+      mkdir("tmp");
+      $fname = mktemp("tmp/ipt-fileXXXX");
+      $member->extractToFileNamed($fname);
+    } else {
+      $core = basename($path, ".txt");
+      $fname = $path;
+    }
+
+    $core = $opt_c if $opt_c;
+
+    my $csv = Parse::CSV->new(
+      file => $fname,
+      names => 1,
+      sep_char => "\t",
+      quote_char => undef,
+      escape_char => undef
+    );
+
+    while (my $row = $csv->fetch) {
+      my $id;
+
+      $id = $$row{eventID} if($core eq "event");
+      $id = $$row{occurrenceID} if($core eq "occurrence");
+      $id = $$row{measurementID} if($core eq "extendedmeasurementorfact");
+      $id = $$row{measurementID} if($core eq "measurementorfact");
+
+      if(!$id) {
+        say "Skipping row: Unable to determine ID field." if $verbose;
+        $skipped++; next;
+      }
+      if($id !~ /^urn\:/ && $id !~ $idre) {
+        say "Skipping row: Invalid ID." if $verbose;
+        $skipped++; next;
+      }
+
+      $$row{_id} = $id;
+      $$row{_core} = $core;
+      $$row{_updated} = time();
+
+      if(!$db{$id}) {
+        $$row{_created} = time();
+      }
+
+      $id =~ s/^urn\:catalog\://;
+      $id =~ s/^urn\:uuid\://;
+
+      $db{$id} = encode_json($row) if $opt_d;
+      $bulk->index({ id => $id, source => $row }) if $opt_e;
+
+      $total++;
+    }
+    $bulk->flush() if $opt_e;
+
+    if($csv->errstr) {
+      die($csv->errstr . "\n");
+    }
+  }
+  $sets++;
+}
+
+say "Added $total record(s) from $sets dataset(s)." if $total && !$silent;
+say "Skipped $skipped record(s)." if $skipped && !$silent;
+
