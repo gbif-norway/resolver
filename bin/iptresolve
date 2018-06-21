@@ -7,8 +7,10 @@ use Getopt::Std;
 use LWP::Simple;
 use JSON;
 
-our ($opt_d, $opt_e, $opt_s, $opt_V);
-getopts("d:esV");
+our ($opt_c, $opt_d, $opt_e, $opt_s, $opt_V);
+getopts("cd:esV");
+
+my $careful = $opt_c;
 
 my @opts;
 push(@opts, "-d$opt_d") if $opt_d;
@@ -24,8 +26,8 @@ for my $ipt (@ARGV) {
     my @args = @opts;
     my $url = $$resource{dwca};
     push(@args, $url);
-    my $ok = system("./plzresolve", @args);
-    exit 1 if($ok ne "0");
+    my $ok = system("plzresolve", @args);
+    exit 1 if($careful && $ok ne "0");
   }
 }
 
