@@ -17,18 +17,18 @@ use JSON;
 
 our $VERSION = "0.01";
 
-our $usage = "$0 [-ehvV] [-c core] [-d database] PATH/URL...";
+our $usage = "$0 [-ehvV] [-D dataset uuid] [-c core] [-d database] PATH/URL...";
 
-our ($opt_c, $opt_d, $opt_e, $opt_h, $opt_v, $opt_i, $opt_s, $opt_V);
+our ($opt_c, $opt_d, $opt_D, $opt_e, $opt_h, $opt_v, $opt_i, $opt_s, $opt_V);
 our $idre = "([0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})\$";
 
-getopts("c:d:ehisvV");
+getopts("c:d:D:ehisvV");
 
 my ($es, $bulk, %db);
 
 if($opt_e) {
   require Search::Elasticsearch;
-  require Search::Elsasticsearch::Client::5_0::Bulk;
+  require Search::Elasticsearch::Client::5_0::Bulk;
 
   $es = Search::Elasticsearch->new;
   $bulk = $es->bulk_helper(
@@ -122,9 +122,9 @@ for my $path (@ARGV) {
         $skipped++; next;
       }
 
-      $$row{_id} = $id;
       $$row{_core} = $core;
       $$row{_updated} = time();
+      $$row{_dataset} = $opt_D if $opt_D;
 
       if(!$db{$id}) {
         $$row{_created} = time();

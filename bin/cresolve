@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+use LWP::Simple;
+use JSON;
+
+our $GBIF = "https://api.gbif.org/v1";
+
+our ($opt_c, $opt_d, $opt_e, $opt_r, $opt_s, $opt_V);
+getopts("cd:ersV");
+
+my $careful = $opt_c;
+
+my @opts;
+push(@opts, "-d$opt_d") if $opt_d;
+push(@opts, "-e") if $opt_e;
+push(@opts, "-V") if $opt_V;
+push(@opts, "-s") if $opt_s;
+
+my ($es, $bulk);
+if($opt_e) {
+  require Search::Elasticsearch;
+  require Search::Elasticsearch::Client::5_0::Bulk;
+
+  $es = Search::Elasticsearch->new;
+  $bulk = $es->bulk_helper(
+    index => "datasets",
+    type => "meta"
+  );
+}
+
+for my $cc (@ARGV) {
+  my $json = get($GBIF . "/dataset/search?limit=5000&publishingCountry=$cc");
+  my $data = from_json($json);
+  my $datasets = $$data{results};
+  for my $dataset (@$datasets) {
+    my $metajson = get($GBIF . "/dataset/" . $$dataset{key});
+    my $metadata = from_json($metajson);
+    $bulk->index({ id => $$dataset{key}, source => $metadata }) if $opt_e;
+    if($opt_r) {
+      my $endpoints = $$metadata{endpoints};
+      for my $endpoint (@$endpoints) {
+        if($$endpoint{type} eq "DWC_ARCHIVE") {
+          my @args = @opts;
+          my $url = $$endpoint{url};
+          push(@args, "-D");
+          push(@args, $$dataset{key});
+          push(@args, $url);
+          my $ok = system("/opt/bin/plzresolve", @args);
+          exit 1 if($careful && $ok ne "0");
+        }
+      }
+    }
+  }
+  $bulk->flush() if $opt_e;
+}
+

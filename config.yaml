@@ -1,4 +1,4 @@
-db: "test.db"
+db: "/gbif/resolver-n/resolver.db"
 order: ['record', 'occurrence', 'organism', 'material', 'event', 'location', 'geology', 'identification', 'taxon', 'measurements', 'relationships', 'other']
 terms:
   record: [ 'id', 'dcterms:title', 'dcterms:type', 'dcterms:modified', 'dcterms:language', 'dcterms:license', 'dcterms:rightsHolder', 'dcterms:accessRights', 'dcterms:bibliographicCitation', 'dcterms:references', 'title', 'type', 'modified', 'language', 'license', 'rightsHolder', 'accessRights', 'bibliographicCitation', 'institutionID', 'collectionID', 'datasetID', 'institutionCode', 'collectionCode', 'datasetName', 'ownerInstitutionCode', 'basisOfRecord', 'informationWithheld', 'dataGeneralizations', 'dynamicProperties' ]
@@ -14,4 +14,4 @@ terms:
   relationships: ['resourceRelationshipID', 'resourceID', 'relatedResourceID', 'relationshipOfResource', 'relationshipAccordingTo', 'relationshipEstablishedDate', 'relationshipRemarks']
 examples:
   - { id: "O:A:3045", title: "Occurrence" }
-search: http://localhost:8081/search
+search: https://data.gbif.no/search
