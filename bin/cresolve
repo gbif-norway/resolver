@@ -6,6 +6,7 @@ use warnings;
 use Getopt::Std;
 use LWP::Simple;
 use JSON;
+use Encode;
 
 our $GBIF = "https://api.gbif.org/v1";
 
@@ -37,7 +38,8 @@ for my $cc (@ARGV) {
   my $data = from_json($json);
   my $datasets = $$data{results};
   for my $dataset (@$datasets) {
-    my $metajson = get($GBIF . "/dataset/" . $$dataset{key});
+    my $raw = get($GBIF . "/dataset/" . $$dataset{key});
+    my $metajson = decode('utf-8', $raw);
     my $metadata = from_json($metajson);
     $bulk->index({ id => $$dataset{key}, source => $metadata }) if $opt_e;
     if($opt_r) {
@@ -54,6 +56,7 @@ for my $cc (@ARGV) {
         }
       }
     }
+    $bulk->flush() if $opt_e;
   }
   $bulk->flush() if $opt_e;
 }
