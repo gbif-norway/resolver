@@ -114,7 +114,7 @@ class index:
         q = web.input()
         if 'id' in q:
             raise web.seeother("/resolver/%s" % q['id'])
-        return render.index(len(db))
+        return render.index()
 
 class resolver:
     def GET(self, raw):
