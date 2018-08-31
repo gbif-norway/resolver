@@ -32,7 +32,7 @@ if($opt_e) {
 
   $es = Search::Elasticsearch->new;
   $bulk = $es->bulk_helper(
-    index => "resolver",
+    index => "dwc",
     type => "dwc"
   );
 }
@@ -52,6 +52,7 @@ if($opt_v) {
 }
 
 my $verbose = $opt_V && !$opt_s;
+$verbose = 1;
 my $silent = $opt_s;
 
 my ($skipped, $total, $sets) = (0, 0, 0);
@@ -112,6 +113,7 @@ for my $path (@ARGV) {
       $id = $$row{occurrenceID} if($core eq "occurrence");
       $id = $$row{measurementID} if($core eq "extendedmeasurementorfact");
       $id = $$row{measurementID} if($core eq "measurementorfact");
+      $id = $$row{taxonID} if($core eq "taxon");
 
       if(!$id) {
         say "Skipping row: Unable to determine ID field." if $verbose;
@@ -125,6 +127,12 @@ for my $path (@ARGV) {
       $$row{_core} = $core;
       $$row{_updated} = time();
       $$row{_dataset} = $opt_D if $opt_D;
+
+      if($$row{decimalLatitude} && $$row{decimalLongitude}) {
+        $$row{_location} = "$$row{decimalLatitude},$$row{decimalLongitude}";
+      }
+
+
 
       if(!$db{$id}) {
         $$row{_created} = time();
