@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+use LWP::Simple;
+use JSON;
+
+our ($opt_c, $opt_d, $opt_e, $opt_s, $opt_V);
+getopts("cd:esV");
+
+my $careful = $opt_c;
+
+my @opts;
+push(@opts, "-d$opt_d") if $opt_d;
+push(@opts, "-e") if $opt_e;
+push(@opts, "-V") if $opt_V;
+push(@opts, "-s") if $opt_s;
+
+for my $ipt (@ARGV) {
+  my $json = get($ipt . "/inventory/dataset");
+  my $data = from_json($json);
+  my $resources = $$data{registeredResources};
+  for my $resource (@$resources) {
+    my @args = @opts;
+    my $url = $$resource{dwca};
+    push(@args, $url);
+    my $ok = system("plzresolve", @args);
+    exit 1 if($careful && $ok ne "0");
+  }
+}
+

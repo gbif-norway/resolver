@@ -1,0 +1,5 @@
+index: dwc
+resolver: https://data.gbif.no/resolver/
+hosts:
+  - { host: localhost }
+timeout: 360
